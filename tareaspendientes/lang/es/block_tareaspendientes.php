@@ -1,4 +1,7 @@
 <?php
+
+defined('MOODLE_INTERNAL') || die();
+
 $string['pluginname'] = 'Bloque Tareas Pendientes Pro';
 $string['ejemplo:addinstance'] = 'Añadir un bloque de tareas pendientes pro';
 $string['ejemplo:myaddinstance'] = 'Añadir el bloque de tareas pendientes pro a Mi Moodle';

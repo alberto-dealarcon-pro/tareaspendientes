@@ -22,32 +22,36 @@ class block_tareaspendientes extends block_base {
             return $this->content;
         }
 
-        // Consultar entregas pendientes con fecha de entrega
-        $sql = "
-            SELECT a.id AS assignid, a.name AS assignname, a.duedate, 
-                   u.id AS userid, u.firstname, u.lastname, s.grade
-              FROM {assign} a
-              JOIN {assign_submission} s ON s.assignment = a.id
-              JOIN {user} u ON u.id = s.userid
-             WHERE a.course = :courseid
-               AND s.status = :status
-               AND (s.grade IS NULL)
-          ORDER BY a.duedate ASC, a.name, u.lastname, u.firstname
-        ";
-
-        $submissions = $DB->get_records_sql($sql, ['courseid' => $COURSE->id, 'status' => 'submitted']);
-
-        if (!$submissions) {
+        // Obtener todas las asignaciones del curso
+        $assignments = $DB->get_records('assign', ['course' => $COURSE->id]);
+        if (!$assignments) {
             $this->content->text = get_string('notasks', 'block_tareaspendientes');
             return $this->content;
         }
 
-        // Agrupar por tarea
         $grouped = [];
-        foreach ($submissions as $sub) {
-            $grouped[$sub->assignid]['name'] = $sub->assignname;
-            $grouped[$sub->assignid]['duedate'] = $sub->duedate;
-            $grouped[$sub->assignid]['users'][] = $sub;
+
+        foreach ($assignments as $assign) {
+            // Traer los envíos más recientes de cada usuario
+            $submissions = $DB->get_records('assign_submission', ['assignment' => $assign->id, 'latest' => 1]);
+            foreach ($submissions as $sub) {
+                // Obtener calificación
+                $grade = $DB->get_field('assign_grades', 'grade', ['assignment' => $assign->id, 'userid' => $sub->userid]);
+                if ($grade === null) { // Pendiente de calificar
+                    $user = $DB->get_record('user', ['id' => $sub->userid]);
+                    if (!$user) {
+                        continue;
+                    }
+                    $grouped[$assign->id]['name'] = $assign->name;
+                    $grouped[$assign->id]['duedate'] = $assign->duedate;
+                    $grouped[$assign->id]['users'][] = $user;
+                }
+            }
+        }
+
+        if (empty($grouped)) {
+            $this->content->text = get_string('notasks', 'block_tareaspendientes');
+            return $this->content;
         }
 
         // Generar HTML
@@ -76,7 +80,7 @@ class block_tareaspendientes extends block_base {
                 $url = new moodle_url('/mod/assign/view.php', [
                     'id' => $cm->id,
                     'action' => 'grade',
-                    'userid' => $user->userid
+                    'userid' => $user->id
                 ]);
                 $ul .= html_writer::tag('li', html_writer::link($url, $user->firstname . ' ' . $user->lastname));
             }
@@ -97,7 +101,6 @@ class block_tareaspendientes extends block_base {
                 // Actualización AJAX cada 60 segundos
                 setInterval(function(){
                     $.get(window.location.href, function(data){
-                        // recargar el bloque completo
                         var newblock = $('#block-tareaspendientes-tasks', data).html();
                         $('#block-tareaspendientes-tasks').html(newblock);
                     });
@@ -110,4 +113,3 @@ class block_tareaspendientes extends block_base {
         return $this->content;
     }
 }
-
