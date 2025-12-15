@@ -9,6 +9,7 @@ class block_tareaspendientes extends block_base {
 
     public function get_content() {
         global $USER, $DB, $COURSE;
+        
 
         if ($this->content !== null) {
             return $this->content;
@@ -25,6 +26,7 @@ class block_tareaspendientes extends block_base {
         // Obtener todas las asignaciones del curso
         $assignments = $DB->get_records('assign', ['course' => $COURSE->id]);
         if (!$assignments) {
+            debugging('No assignments found in course 1 ' . $COURSE->id, DEBUG_DEVELOPER);
             $this->content->text = get_string('notasks', 'block_tareaspendientes');
             return $this->content;
         }
@@ -36,9 +38,11 @@ class block_tareaspendientes extends block_base {
             $submissions = $DB->get_records('assign_submission', ['assignment' => $assign->id, 'latest' => 1]);
             foreach ($submissions as $sub) {
                 // Obtener calificación
+                debugging('Processing submission for assignment ' . $assign->id . ' user ' . $sub->userid, DEBUG_DEVELOPER);
                 $grade = $DB->get_field('assign_grades', 'grade', ['assignment' => $assign->id, 'userid' => $sub->userid]);
                 if ($grade === null) { // Pendiente de calificar
                     $user = $DB->get_record('user', ['id' => $sub->userid]);
+                    debugging('Found ungraded submission for user ' . $sub->userid, DEBUG_DEVELOPER);
                     if (!$user) {
                         continue;
                     }
@@ -50,6 +54,7 @@ class block_tareaspendientes extends block_base {
         }
 
         if (empty($grouped)) {
+            debugging('No pending tasks found in course 2' . $COURSE->id, DEBUG_DEVELOPER);
             $this->content->text = get_string('notasks', 'block_tareaspendientes');
             return $this->content;
         }
