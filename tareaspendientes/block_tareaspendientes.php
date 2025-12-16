@@ -98,20 +98,11 @@ class block_tareaspendientes extends block_base {
 
         // Incluir JavaScript y CSS
         $this->content->text = $html;
-        $this->content->text .= html_writer::script("
-            require(['jquery'], function($){
-                $('.block-tareaspendientes-toggle').click(function(){
-                    $(this).next('ul').slideToggle();
-                });
-                // Actualización AJAX cada 60 segundos
-                setInterval(function(){
-                    $.get(window.location.href, function(data){
-                        var newblock = $('#block-tareaspendientes-tasks', data).html();
-                        $('#block-tareaspendientes-tasks').html(newblock);
-                    });
-                }, 60000);
-            });
-        ");
+
+        // Inicializar JS AMD
+        $this->page->requires->js_call_amd(
+        'block_tareaspendientes/tareaspendientes',
+        'init');
 
         $this->content->footer = '';
 
