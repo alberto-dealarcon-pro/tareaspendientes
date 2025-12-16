@@ -103,6 +103,7 @@ class block_tareaspendientes extends block_base {
         $this->page->requires->js_call_amd(
         'block_tareaspendientes/tareaspendientes',
         'init');
+        
 
         $this->content->footer = '';
 
