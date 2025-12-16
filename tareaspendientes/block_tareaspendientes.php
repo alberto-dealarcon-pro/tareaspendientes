@@ -35,12 +35,12 @@ class block_tareaspendientes extends block_base {
 
         foreach ($assignments as $assign) {
             // Traer los envíos más recientes de cada usuario
-            $submissions = $DB->get_records('assign_submission', ['assignment' => $assign->id, 'latest' => 1]);
+            $submissions = $DB->get_records('assign_submission', ['assignment' => $assign->id, 'latest' => 1, 'status' => 'submitted']);
             foreach ($submissions as $sub) {
                 // Obtener calificación
                 debugging('Processing submission for assignment ' . $assign->id . ' user ' . $sub->userid, DEBUG_DEVELOPER);
                 $grade = $DB->get_field('assign_grades', 'grade', ['assignment' => $assign->id, 'userid' => $sub->userid]);
-                if ($grade === null) { // Pendiente de calificar
+                if ($grade === null || $grade < 0) { // Pendiente de calificar
                     $user = $DB->get_record('user', ['id' => $sub->userid]);
                     debugging('Found ungraded submission for user ' . $sub->userid, DEBUG_DEVELOPER);
                     if (!$user) {
